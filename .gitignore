@@ -1,6 +1,21 @@
 # MACOS
 .DS_Store
 
+# Freqtrade
+backtest_results/
+data/
+freqaimodels/
+hyperopt_results/
+logs/
+notebooks/
+plot/
+hyperopt.lock
+config.json
+tradesv3.sqlite
+tradesv3.sqlite-shm
+tradesv3.sqlite-wal
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
