@@ -189,10 +189,17 @@ class DCAScalping(IStrategy):
         """
         return dataframe
     
+    # def custom_entry_price(self, pair: str, trade: Trade | None, current_time: datetime, proposed_rate: float,
+    #                        entry_tag: str | None, side: str, **kwargs) -> float:
+    #     dataframe, _ = self.dp.get_analyzed_dataframe(pair = pair, timeframe = self.timeframe)
+    #     new_entryprice = dataframe["close"].iat[-1]
+    #     print(f"new_entryprice::{new_entryprice}")
+    #     return new_entryprice
+    
     # Example specific variables
     max_entry_position_adjustment = 3
     # This number is explained a bit further down
-    max_dca_multiplier = 5
+    max_dca_multiplier = 5.5
     
     # This is called when placing the initial order (opening trade)
     def custom_stake_amount(self, pair: str, current_time: datetime, current_rate: float,
@@ -240,38 +247,22 @@ class DCAScalping(IStrategy):
         """
         filled_entries = trade.select_filled_orders(trade.entry_side)
         count_of_entries = trade.nr_of_successful_entries
+        price_steps = 0.02  # 1%
+        target = 0.05   # 5%
 
         try:
             # This returns first order stake size
             stake_amount = filled_entries[0].stake_amount_filled
 
             # dca when profit is negative
-            # run every 5 secs when current profit down to -2.5%
-            if (current_profit < - 0.01 and count_of_entries == 1):
-                # This then calculates current safety order size
-                stake_amount = stake_amount * (1 + (count_of_entries * 0.25))
-                return stake_amount, "1/3rd_increase"
+            if (current_profit < -price_steps * count_of_entries):
+                stake_amount *= (1 + (count_of_entries * 0.25))
+                return stake_amount, "increase_stake"
             
-            # run every 5 secs when current profit down to -2.5%
-            elif (current_profit < - 0.02 and count_of_entries == 2):
-                # This then calculates current safety order size
-                stake_amount = stake_amount * (1 + (count_of_entries * 0.25))
-                return stake_amount, "1/3rd_increase"
-            
-            elif (current_profit < - 0.03 and count_of_entries == 3):
-                # This then calculates current safety order size
-                stake_amount = stake_amount * (1 + (count_of_entries * 0.25))
-                return stake_amount, "1/3rd_increase"
-            
-            elif current_profit >= 0.05:
-                # Take all of the profit at +5%
-                return -(trade.stake_amount), "all_profit_5%"
+            elif current_profit >= target:
+                # Take all of the profit when get target
+                return -(trade.stake_amount), "get_dca_profit"
             
             return None
         except Exception as exception:
             return None
-
-    def leverage(self, pair: str, current_time: datetime, current_rate: float,
-                 proposed_leverage: float, max_leverage: float, entry_tag: str | None,
-                 side: str, **kwargs) -> float:
-        return 1.0
